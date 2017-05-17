@@ -1,37 +1,90 @@
 import org.openqa.selenium.By;
+import org.openqa.selenium.InvalidSelectorException;
 import org.openqa.selenium.Platform;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     @Test
-    public static void testGoogle() throws Exception {
-        String platform_name = "win7";
-        String browser_name = "firefox";
-        String browser_version = "53";
-
-        DesiredCapabilities cap = DesiredCapabilities.firefox();
-        cap.setPlatform(Platform.extractFromSysProperty(platform_name));
-        cap.setBrowserName(browser_name);
-
-        System.setProperty("webdriver.gecko.driver", "C://Users//user//Downloads//geckodriver.exe");
-        RemoteWebDriver firefoxDriver = new RemoteWebDriver(new URL("http://localhost:4444/grid/console"), cap);
-        firefoxDriver.get("https://www.google.com/");
-        Thread.sleep(5000);
-        WebElement element = firefoxDriver.findElement(By.name("q"));
+    public void first_thread() throws MalformedURLException {
+        String hubURL = "http://192.168.60.177:5555/wd/hub";
+        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
+        capabilities.setBrowserName(BrowserType.FIREFOX);
+        capabilities.setVersion("45.0");
+        capabilities.setPlatform(Platform.extractFromSysProperty("win7"));
+        RemoteWebDriver driver = new RemoteWebDriver(new URL(hubURL), capabilities);
+        driver.get("https://www.google.com/");
+        //неявное ожидание
+        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        //явное ожидание
+        WebElement element = (new WebDriverWait(driver, 10))
+                .until(ExpectedConditions.presenceOfElementLocated(By.name("q")));
         element.sendKeys("Симбирсофт");
-        Thread.sleep(5000);
         element.submit();
-        Thread.sleep(5000);
-//        WebElement site = firefoxDriver.findElement(By.xpath("//div/h3/a/text()"));
-//        System.out.println(site.toString());
-//        Assert.assertEquals("СимбирСофт", site.toString());
-//        System.out.println("На странице отображено: " + firefoxDriver.findElement(By.xpath("//div/h3/a")));
-        firefoxDriver.quit();
+        String expectedRes = "https://www.simbirsoft.com/ruru/";
+        String actualRes = driver.findElement
+                (By.xpath(".//div/cite[text()='https://www.simbirsoft.com/ruru/']")).getText();
+        Assert.assertEquals(expectedRes, actualRes);
+        driver.get("https://www.simbirsoft.com/ruru/");
+
+        try {
+            String expectedSignature = "© Copyright 2001-2017 SimbirSoft Ltd. All Rights Reserved";
+            WebElement elementSignature = driver.findElement(By.xpath(".//*[@id='pointerOverlay']/footer/div/div[2]"));
+            Assert.assertEquals(expectedSignature, elementSignature.getText());
+
+        } catch (InvalidSelectorException e) {
+            System.out.println("Аварийное завершение " + e);
+            driver.close();
+            driver.quit();
+        }
+        driver.close();
+        driver.quit();
+    }
+
+    @Test
+    public void second_thread() throws MalformedURLException {
+        String hubURL = "http://192.168.60.177:5555/wd/hub";
+        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
+        capabilities.setBrowserName(BrowserType.FIREFOX);
+        capabilities.setVersion("45.0");
+        capabilities.setPlatform(Platform.extractFromSysProperty("win7"));
+        RemoteWebDriver driver = new RemoteWebDriver(new URL(hubURL), capabilities);
+        driver.get("https://www.google.com/");
+        //неявное ожидание
+        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+        //явное ожидание
+        WebElement element = (new WebDriverWait(driver, 10))
+                .until(ExpectedConditions.presenceOfElementLocated(By.name("q")));
+        element.sendKeys("Симбирсофт");
+        element.submit();
+        String expectedRes = "https://www.simbirsoft.com/ruru/";
+        String actualRes = driver.findElement
+                (By.xpath(".//div/cite[text()='https://www.simbirsoft.com/ruru/']")).getText();
+        Assert.assertEquals(expectedRes, actualRes);
+        driver.get("https://www.simbirsoft.com/ruru/");
+
+        try {
+            String expectedSignature = "© Copyright 2001-2017 SimbirSoft Ltd. All Rights Reserved";
+            WebElement elementSignature = driver.findElement(By.xpath(".//*[@id='pointerOverlay']/footer/div/div[2]"));
+            Assert.assertEquals(expectedSignature, elementSignature.getText());
+
+        } catch (InvalidSelectorException e) {
+            System.out.println("Аварийное завершение " + e);
+            driver.close();
+            driver.quit();
+        }
+        driver.close();
+        driver.quit();
     }
 }
